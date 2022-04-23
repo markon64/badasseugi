@@ -1,0 +1,234 @@
+{% extends "trainer/base.html" %}
+{% load static %}
+
+{% block title %}{% endblock %}
+{% block content %}
+    <h1 class="d-flex justify-content-center">Problem set: {{ set.name }}</h1>
+    {% if is_solution %}
+        <h2>Your answer:
+            {% for word in sub_answer %}
+                <a href="https://en.dict.naver.com/#/search?query={{ word }}" target="_blank"
+                   class="normal-link">{{ word }}</a>
+            {% endfor %}
+        </h2>
+        <h2>Solution:
+            {% for word in orig_sentence_words %}
+                <a href="https://en.dict.naver.com/#/search?query={{ word }}" target="_blank"
+                   class="normal-link">{{ word }}</a>
+            {% endfor %}
+        </h2>
+        Mistakes: {{ mistake_num }}
+        <ol>
+            {% for wrong_word in solution %}
+                <li>{{ wrong_word.wrong }} -> {{ wrong_word.right }}</li>
+            {% endfor %}
+        </ol>
+        {% if problem.translation %}
+            <div id="sol_translation" {% if translation_hidden %}style="display: none"{% endif %}>
+                <h4>Translation: {{ problem.translation }}</h4>
+            </div>
+        {% endif %}
+        <form method="post" action="{% url 'training' set_id=problem.problem_set.id repeat=1 %}">
+            {% csrf_token %}
+            <button type="submit" accesskey="a" autofocus>Repeat</button>
+            <input type="text" name="problemNumber" value="{{ problem_number }}" hidden/>
+            {% if training_queue_id %}
+                <input type="hidden" name="trainingQueueId" value="{{ training_queue_id }}">
+            {% endif %}
+        </form>
+        <form method="post" action="{% url 'training' set_id=problem.problem_set.id repeat=0 %}">
+            {% csrf_token %}
+            <button type="submit" accesskey="n">Next</button>
+            <input type="text" name="problemNumber" value="{{ problem_number }}" hidden/>
+            {% if training_queue_id %}
+                <input type="hidden" name="trainingQueueId" value="{{ training_queue_id }}">
+            {% endif %}
+        </form>
+        <form action="{% url 'admin:index' %}trainer/problem/{{ problem.id }}/change/">
+            <button type="submit" autofocus accesskey="c">Edit</button>
+        </form>
+        <input type="text" id="bookmarkName"/>
+        <button type="button" onclick="bookmark()">Bookmark</button>
+        {% if not training_queue_id %}
+            <form id="justToForm" method="post"
+                  action="{% url 'training' set_id=problem.problem_set.id repeat=1 %}">
+                {% csrf_token %}
+                <label for="problemNumber">Jump to:</label>
+                <input id="jumpToField" type="text" name="problemNumber" value="{{ problem_number }}"
+                       class="start-with-input"/>
+                <button id="jumpToSubmit" type="submit" class="btn btn-light" value="{{ problem_set.name }}">Jump
+                </button>
+                {% if set.bookmarks %}
+                    <select id="bookmark_select" onchange="set_problem_number()">
+                        <option value="{{ problem_number }}"></option>
+                        {% for bookmark in set.bookmarks %}
+                            <option value="{{ bookmark.fake_number }}">{{ bookmark.name }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            </form>
+        {% endif %}
+    {% else %}
+        {% if problem %}
+            <h2>Problem #{{ problem_number }}</h2>
+            <form method="post"
+                  action="{% url 'eval' set_id=problem.problem.problem_set_id problem_number=problem_number %}"
+                  autocomplete="off">
+                {% csrf_token %}
+                <div class="form-group">
+                    {% if problem.partial_solution %}
+                        <h2>Partial Solution: {{ problem.partial_solution }}</h2>
+                        <input type="text" name="partial_solution" value="{{ problem.partial_solution }}" hidden>
+                    {% endif %}
+                    <label for="solution">Your answer:</label>
+                    <input class="form-control form-control-lg large-input" name="solution" accesskey="A" autofocus/>
+                </div>
+                {% if training_queue %}
+                    <input type="hidden" name="trainingQueueId" value="{{ training_queue.id }}">
+                    <input type="hidden" name="problem_number" value="{{ problem.problem.problem_number }}">
+                {% endif %}
+                <button type="submit" class="btn btn-danger" accesskey="\">Check</button>
+            </form>
+            {% if problem.problem.translation %}
+                <button class="btn btn-primary" onclick="toggleTranslation()">Translation</button>
+            {% endif %}
+        {% else %}
+            <p>No problems in this set</p>
+        {% endif %}
+    {% endif %}
+    {% if audio_url %}
+        <audio id="sample" src="{{ audio_url }}" preload="auto"></audio>
+        <a href="javascript:play();"
+        ><img src="{% static 'trainer/imgs/sound_icon.png' %}" width="50"/></a>
+        <a href="javascript:loop();"
+        ><img src="{% static 'trainer/imgs/loop.png' %}" width="50"/></a>
+        Playback speed: <span id="playback_speed">1</span>
+        {% if problem.problem.translation %}
+            <div style="display: none" id="translation"><h4>{{ problem.problem.translation }}</h4></div>
+        {% endif %}
+    {% endif %}
+    {% if stats %}
+        <div id="stats">
+            <ul class="stat_list">
+                <li>Current score: {{ stats.score }}</li>
+                <li>Last attempt: {{ stats.last_played_date }}</li>
+                <li>Attempted {{ stats.played }} times ({{ stats.success }} successful attempts)</li>
+                <li>{{ stats.record_stats }}</li>
+            </ul>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block customjs %}
+    <script>
+        let playback_speed = document.getElementById("playback_speed");
+        let playbackspeed = 1.0;
+
+        {% if problem.id %}
+            function bookmark() {
+                let name = document.getElementById('bookmarkName').value;
+                if (name === "") {
+                    alert("Bookmark must have a name");
+                    return;
+                }
+                let data = {
+                    name: name,
+                    problem_id: {{ problem.id }}
+                };
+                fetch("{% url 'bookmark' %}", {
+                    method: 'post',
+                    headers: {
+                        'Content-type': 'application/json',
+                        'X-CSRFToken': "{{ csrf_token }}",
+                    },
+                    mode: 'same-origin',
+                    body: JSON.stringify(data),
+                }).then(data => data.text()).then(text => alert(text));
+            }
+        {% endif %}
+
+        function set_problem_number() {
+            jump_to_field = document.getElementById("jumpToField");
+            select_problem_number = document.getElementById("bookmark_select");
+            problem_number = select_problem_number.options[select_problem_number.selectedIndex].value;
+            jump_to_field.value = problem_number;
+        }
+
+        function loop() {
+            let audio = document.getElementById("sample");
+            audio.loop = !audio.loop;
+            if (audio.loop) {
+                play();
+            } else {
+                audio.pause();
+            }
+        }
+
+        function play() {
+            let audio = document.getElementById("sample");
+            audio.pause();
+            audio.currentTime = 0;
+            audio.playbackRate = playbackspeed;
+            audio.play();
+        }
+
+        function toggleTranslation() {
+            let translation = document.getElementById("translation");
+            let sol_translation = document.getElementById("sol_translation");
+            if (translation != null) {
+                if (translation.style.display === "none") {
+                    translation.style.display = "block";
+                } else {
+                    translation.style.display = "none";
+                }
+            }
+            if (sol_translation != null) {
+                if (sol_translation.style.display === "none") {
+                    sol_translation.style.display = "block";
+                } else {
+                    sol_translation.style.display = "none";
+                }
+            }
+        }
+
+        document.onkeydown = function (e) {
+            let audio = document.getElementById("sample");
+            if (e.altKey && e.code === 'KeyJ') {
+                document.getElementById("jumpTo").hidden = false;
+            }
+            if (e.altKey && e.code === 'NumpadAdd') {
+                console.log(playbackspeed);
+                playbackspeed = Math.min(Math.round((playbackspeed + 0.1) * 100) / 100, 2.0);
+                console.log(playbackspeed);
+                audio.playbackRate = playbackspeed;
+                playback_speed.innerHTML = playbackspeed;
+            }
+            if (e.altKey && e.code === 'NumpadSubtract') {
+                console.log(playbackspeed);
+                playbackspeed = Math.max(Math.round((playbackspeed - 0.1) * 100) / 100, 0.1);
+                console.log(playbackspeed);
+                audio.playbackRate = playbackspeed;
+                playback_speed.innerHTML = playbackspeed;
+            }
+            if (e.altKey && e.code === 'KeyS') {
+                play();
+            }
+            if (e.altKey && e.code === 'KeyW') {
+                loop();
+            }
+            if (e.altKey && e.code === 'KeyT') {
+                toggleTranslation();
+            }
+            if (e.altKey && e.code === 'KeyL') {
+                jumpToField = document.getElementById("jumpToField");
+                jumpToField.focus();
+                jumpToField.select();
+            }
+            if (e.altKey && e.code === 'KeyB') {
+                jumpToField = document.getElementById("bookmarkName");
+                jumpToField.focus();
+                jumpToField.select();
+            }
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,16 @@
+.large-input {
+    font-size: 40px
+}
+
+.normal-link {
+    color: black;
+    text-decoration: none;
+}
+
+.start-with-input {
+    width: 40px;
+}
+
+.stat_list {
+    list-style-type: none;
+}

@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{% block title %}Index{% endblock %}</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'trainer/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/css/bootstrap4-toggle.min.css"
+          rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'trainer/css/simple-sidebar.css' %}" rel="stylesheet">
+    <link href="{% static 'trainer/css/custom.css' %}" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div class="bg-light border-right" id="sidebar-wrapper">
+        <div class="sidebar-heading">Drama drills</div>
+        <div class="list-group list-group-flush">
+            <a href="{% url 'problemSets' %}" class="list-group-item list-group-item-action bg-light">Problem Sets</a>
+            <a href="{% url 'import' %}" class="list-group-item list-group-item-action bg-light">Import</a>
+            <a href="{% url 'admin:index' %}trainer/setting/1/change/"
+               class="list-group-item list-group-item-action bg-light">Settings</a>
+            <a href="{% url 'admin:index' %}" class="list-group-item list-group-item-action bg-light">Admin</a>
+        </div>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <button class="btn btn-primary" id="menu-toggle">Toggle Menu</button>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+{#            <ul class="navbar-nav ml-auto mt-2 mt-lg-0">#}
+{#                <li>#}
+{#                    <input type="checkbox" id=""checked data-toggle="toggle" data-on="Recording on" data-off="Recording off"#}
+{#                           data-onstyle="success" data-offstyle="dark" data-width="150" data-height="25">#}
+{#                </li>#}
+{#            </ul>#}
+        </nav>
+
+        <div class="container-fluid">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+    <!-- /#page-content-wrapper -->
+
+</div>
+<!-- /#wrapper -->
+
+<!-- Bootstrap core JavaScript -->
+<script src="{% static 'trainer/vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'trainer/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/js/bootstrap4-toggle.min.js"></script>
+
+<!-- Menu Toggle Script -->
+<script>
+    $("#menu-toggle").click(function (e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+</script>
+{% block customjs %}{% endblock %}
+</body>
+</html>

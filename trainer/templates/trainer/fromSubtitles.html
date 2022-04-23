@@ -1,0 +1,18 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Import from subtitles{% endblock %}
+{% block content %}
+    <h1 class="mt-4">Import</h1>
+    <form action="{% url 'fromSubtitles' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="btn-toolbar mb-3">
+            <label for="original">Original file (srt or vtt)</label>
+            <input type="file" class="form-control-file" name="original">
+            <label for="translation">Translations (srt; optional)</label>
+            <input type="file" class="form-control-file" name="translation">
+            <label for="audio">Audio/Video file (max 2GB; optional)</label>
+            <input type="file" class="form-control-file" name="audio">
+        </div>
+        <input type="submit" class="btn btn-primary" value="Import">
+    </form>
+{% endblock %}

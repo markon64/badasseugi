@@ -1,0 +1,54 @@
+{% extends "trainer/base.html" %}
+
+{% block title %}Index{% endblock %}
+{% block content %}
+    <h1 class="mt-4">Problem Sets</h1>
+    {% if problem_set_list %}
+        <table>
+            {% for problem_set in problem_set_list %}
+                <tr>
+                    <form method="post" action="{% url 'training' set_id=problem_set.id repeat=1 %}">
+                        {% csrf_token %}
+                        <td>
+                            <button type="submit" class="btn btn-light"
+                                    value="{{ problem_set.name }}">{{ problem_set.name }}</button>
+                        </td>
+                        <td>
+                            <label for="problemNumber">Start with:</label>
+                            <input type="text" name="problemNumber" value="{{ problem_set.last_fake_problem_number }}"
+                                   class="start-with-input" id="{{ problem_set.id }}"/>
+                            {% if problem_set.bookmarks %}
+                                <select id="bookmark_select_{{ problem_set.id }}" onchange="set_problem_number({{ problem_set.id }})">
+                                    <option value="{{ problem_set.last_fake_problem_number }}"></option>
+                                    {% for bookmark in problem_set.bookmarks %}
+                                        <option value="{{ bookmark.fake_number }}">{{ bookmark.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </td>
+                    </form>
+                    <td>
+                        <form method="post" action="{% url 'createQueue' %}">
+                            {% csrf_token %}
+                            <input type="text" name="num_of_problems" value="5" class="start-with-input">
+                            <input type="hidden" name="problem_set_id" value="{{ problem_set.id }}">
+                            <button type="submit" class="btn btn-light" value="Q">Training</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No problem sets</p>
+    {% endif %}
+{% endblock %}
+{% block customjs %}
+    <script>
+        function set_problem_number(set_id) {
+            problem_number_input = document.getElementById(set_id)
+            select_problem_number = document.getElementById("bookmark_select_" + set_id)
+            problem_number = select_problem_number.options[select_problem_number.selectedIndex].value
+            problem_number_input.value = problem_number
+        }
+    </script>
+{% endblock %}
