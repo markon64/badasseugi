@@ -49,18 +49,3 @@ def srt_from_vtt(lines: Union[Iterator[str], Iterator[bytes]], settings: SrtConv
                     + (sep if not one_line else "")
             )
     return result
-
-
-if __name__ == '__main__':
-
-    name = "기생충"
-    src_path = f"D:\\langapp\\langapp\\media\\auto_convert\\vtt.vtt"
-    dest_path = f"D:\\langapp\\langapp\\media\\auto_convert\\{name}.srt"
-    settings = SrtConversionSettings(default_extractors(), [], False)
-
-    with open(src_path, "r", encoding="utf-8") as src:
-        with open(dest_path, "w+", encoding="utf-8") as dest:
-            dest.write(srt_from_vtt(src, settings))
-
-    print(f"Conversion from {src_path} to {dest_path} finished.")
-    exit()
