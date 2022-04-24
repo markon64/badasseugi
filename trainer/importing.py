@@ -44,9 +44,12 @@ class Importer:
             elif i % 3 == 2:
                 processors = default_line_processors()
                 sentence = processed_string(original_lines[i], processors)
+                if sentence == "":
+                    problem_num += 1
+                    continue
                 problem.sentence = sentence
-                if translation_lines is not None:
-                    problem.translation = guess_trans_line(start_total, end_total, translation_lines, 0.7)
+                if translation_lines:
+                    problem.translation = guess_trans_line(start_total, end_total, translation_lines, 0.55)
                     if problem.translation is None:
                         print(f'Warning: Translation for problem "{sentence}" missing ({int(i / 3)})')
                         missed += 1
