@@ -82,15 +82,11 @@ def timetext_to_time(time_text: str) -> (float, float):
 
 def update_problem_score(problem: Problem) -> Problem:
     words_in_problem = [processed_string(k, default_word_processors()) for k in problem.sentence.split()]
-    word_scores = []
     db_words = Word.objects.filter(id__in=words_in_problem).all()
-    word_scores = []
-    for word in db_words:
-        word_scores.append((word.wrong / word.played) if word.played != 0 else 1)  # values between 0 and 1
+    word_scores = [(word.wrong / word.played) if word.played != 0 else 1 for word in db_words]  # values between 0 and 1
     if len(word_scores) == 0:
         score_from_now = (problem.success_number / problem.played) if problem.played != 0 else 0
     else:
-        score_from_now = 1 - (sum(word_scores) / len(word_scores))  # value between 0 and 1; the higher the better
+        score_from_now = 1 - (sum(word_scores) / len(word_scores))  # value between 0 and 1; the higher, the better
     problem.score = score_from_now * (1 / problem.played) + problem.score * (1 - (1 / problem.played))
-    # problem.score = score_from_now * 0.5 + problem.score * 0.5
     return problem
