@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import List, Union, Optional
 
 from text.processing import remove_new_line, processed_string, default_word_processors
-from trainer.models import Problem, Word
+from trainer.models import Problem, Word, Setting
 
 
 @dataclass(frozen=True)
@@ -90,3 +90,17 @@ def update_problem_score(problem: Problem) -> Problem:
         score_from_now = 1 - (sum(word_scores) / len(word_scores))  # value between 0 and 1; the higher, the better
     problem.score = score_from_now * (1 / problem.played) + problem.score * (1 - (1 / problem.played))
     return problem
+
+
+def get_setting() -> Setting:
+    setting = Setting.objects.first()
+    if not setting:
+        setting = Setting()
+        setting.save()
+    return setting
+
+
+def get_context(context: dict) -> dict:
+    return {**context, **{
+        "setting_id": get_setting().id
+    }}

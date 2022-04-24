@@ -17,7 +17,7 @@ class Importer:
     @transaction.atomic
     def from_subtitles(original_lines: List[str], translation_lines: List[str], name: str, audio_file) -> None:
         problem_set_name = name
-        langapp_settings = Setting.objects.first()
+        langapp_settings = get_setting()
         before_start = langapp_settings.import_audio_time_added_before
         after_start = langapp_settings.import_audio_time_added_after
         if len(ProblemSet.objects.filter(name=name)) > 0:

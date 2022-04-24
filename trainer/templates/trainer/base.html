@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>{% block title %}Index{% endblock %}</title>
+    <title>{% block title %}{% endblock %}</title>
 
     <!-- Bootstrap core CSS -->
     <link href="{% static 'trainer/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -28,11 +28,11 @@
 
     <!-- Sidebar -->
     <div class="bg-light border-right" id="sidebar-wrapper">
-        <div class="sidebar-heading">Drama drills</div>
+        <div class="sidebar-heading">받아쓰기</div>
         <div class="list-group list-group-flush">
             <a href="{% url 'problemSets' %}" class="list-group-item list-group-item-action bg-light">Problem Sets</a>
             <a href="{% url 'import' %}" class="list-group-item list-group-item-action bg-light">Import</a>
-            <a href="{% url 'admin:index' %}trainer/setting/1/change/"
+            <a href="{% url 'admin:index' %}trainer/setting/{{ setting_id }}/change/"
                class="list-group-item list-group-item-action bg-light">Settings</a>
             <a href="{% url 'admin:index' %}" class="list-group-item list-group-item-action bg-light">Admin</a>
         </div>

@@ -21,6 +21,8 @@ from trainer.utils import (
     update_problem_score,
     get_fake_problem_no,
     StatRecord,
+    get_setting,
+    get_context,
 )
 
 
@@ -31,16 +33,17 @@ def problem_set(request: django.http.request.HttpRequest):
         set.bookmarks = [b for b in all_bookmarks if b.problem.problem_set == set]
         for b in set.bookmarks:
             b.fake_number = get_fake_problem_no(set.id, b.problem.problem_number)
-    context = {"problem_set_list": all_sets}
+    context = get_context({"problem_set_list": all_sets})
     return HttpResponse(render(request, "trainer/index.html", context))
 
 
 def importing(request):
-    return HttpResponse(render(request, "trainer/fromSubtitles.html"))
+    return HttpResponse(render(request, "trainer/fromSubtitles.html", get_context({})))
 
 
 def success_import(request):
-    return HttpResponse(render(request, "trainer/message.html", {"title": "Success", "message": "Import successful"}))
+    context = get_context({"title": "Success", "message": "Import successful"})
+    return HttpResponse(render(request, "trainer/message.html", context))
 
 
 @transaction.atomic()
@@ -100,7 +103,7 @@ def from_subtitles(request):
 
 @transaction.atomic()
 def training(request, set_id, repeat):
-    setting = Setting.objects.first()
+    setting = get_setting()
     current_problem_set = ProblemSet.objects.filter(id=set_id).first()
     training_queue = None
     fake_problem_number = int(request.POST["problemNumber"]) + (0 if repeat == 1 else 1)
@@ -114,13 +117,14 @@ def training(request, set_id, repeat):
             if training_queue_item is None:
                 training_queue.active = False
                 training_queue.save()
-                context = {"message": "Training complete. Well done!"}  # TODO: display summary
+                context = get_context({"message": "Training complete. Well done!"})  # TODO: display summary
                 return render(request, "trainer/message.html", context)
             else:
                 problem = training_queue_item.problem
                 fake_problem_number = training_queue.current_item_number
         else:
-            return render(request, "trainer/message.html", {"message": "No training queue found."})
+            context = get_context({"message": "No training queue found."})
+            return render(request, "trainer/message.html", context)
     else:
         real_problem_number = get_real_problem_no(set_id, fake_problem_number)
         if fake_problem_number > real_problem_number:
@@ -145,14 +149,16 @@ def training(request, set_id, repeat):
         success=problem.success_number,
         record_stats="Recording stats" if setting.record_stats else "",
     )
-    context = {
-        "set": current_problem_set,
-        "problem": None if problem is None else s_problem,
-        "problem_number": fake_problem_number,
-        "audio_url": audio_url,
-        "training_queue": training_queue,
-        "stats": stat_record,
-    }
+    context = get_context(
+        {
+            "set": current_problem_set,
+            "problem": None if problem is None else s_problem,
+            "problem_number": fake_problem_number,
+            "audio_url": audio_url,
+            "training_queue": training_queue,
+            "stats": stat_record,
+        }
+    )
     return render(request, "trainer/problemTraining.html", context)
 
 
@@ -168,7 +174,7 @@ def evaluate(request, set_id, problem_number):  # TODO: Refactor this shit
         else:
             training_queue_id = False
             real_problem_number = get_real_problem_no(set_id, problem_number)
-        setting = Setting.objects.first()
+        setting = get_setting()
         translation_hidden = setting.hide_translation
         problem_set = ProblemSet.objects.filter(id=set_id).first()
         bookmarks = Bookmark.objects.filter(problem__problem_set=problem_set).all()
@@ -208,13 +214,11 @@ def evaluate(request, set_id, problem_number):  # TODO: Refactor this shit
                         word = Word.objects.filter(id=orig_words[i]).first()
                         if word is not None:
                             word.played = word.played + 1
-                            print(f"Word {word.id} played {word.played} times")
                 if orig_words[i] != sub_answer_word:  # Word was wrongly guessed
                     solution.append(ProblemSolution(i, sub_answer_word, orig_words[i]))
                     if setting.record_stats and isinstance(word, Word):
                         if missing_positions is None or i in missing_positions:
                             word.wrong += 1
-                            print(f"Word {word.id} guessed wrong {word.wrong} times")
                 if setting.record_stats and isinstance(word, Word):
                     word.save()
             else:
@@ -236,18 +240,20 @@ def evaluate(request, set_id, problem_number):  # TODO: Refactor this shit
             success=orig_problem.success_number,
             record_stats="Recording stats" if setting.record_stats else "",
         )
-        context = {
-            "set": problem_set,
-            "is_solution": is_solution,
-            "problem": orig_problem,
-            "orig_sentence_words": orig_words,
-            "sub_answer": sub_answer_words,
-            "solution": solution,
-            "problem_number": problem_number,
-            "mistake_num": len(solution),
-            "audio_url": audio_url,
-            "training_queue_id": training_queue_id,
-            "translation_hidden": translation_hidden,
-            "stats": stat_record,
-        }
+        context = get_context(
+            {
+                "set": problem_set,
+                "is_solution": is_solution,
+                "problem": orig_problem,
+                "orig_sentence_words": orig_words,
+                "sub_answer": sub_answer_words,
+                "solution": solution,
+                "problem_number": problem_number,
+                "mistake_num": len(solution),
+                "audio_url": audio_url,
+                "training_queue_id": training_queue_id,
+                "translation_hidden": translation_hidden,
+                "stats": stat_record,
+            }
+        )
         return render(request, "trainer/problemTraining.html", context)
