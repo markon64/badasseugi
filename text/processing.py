@@ -2,7 +2,7 @@ import functools
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Callable
+from typing import List, Callable, Tuple
 
 
 def without_square_brackets(x: str) -> str:
@@ -38,15 +38,15 @@ def stripped(x: str) -> str:
 
 
 def line_allowed_chars(x: str) -> str:
-    return re.sub(r"[^(A-z가-힣 \d.,?!\"\':)]", "", x)
+    return re.sub(r"[^(A-z가-힣 \d%.,?!\"\':)]", "", x)
 
 
 def word_allowed_chars(x: str) -> str:
-    return re.sub(r"[^(A-z가-힣\d)]", "", x)
+    return re.sub(r"[^(A-z가-힣\d%)]", "", x)
 
 
 def solution_allowed_chars(x: str) -> str:
-    return re.sub(r"[^(A-z가-힣\d )]", "", x)
+    return re.sub(r"[^(A-z가-힣\d% )]", "", x)
 
 
 def default_line_processors() -> List[Callable[[str], str]]:
@@ -72,9 +72,10 @@ def default_solution_processors() -> List[Callable[[str], str]]:
 
 def default_extractors() -> List[str]:
     return [
-        r"^<c\.korean><c\.bg_transparent>&lrm;(.*)</c\.bg_transparent></c\.korean>$",
-        r"^<c\.korean><c\.bg_transparent>(.*)</c\.bg_transparent></c\.korean>$",
-        r"^<c\.korean>(.*)</c\.korean>$",
+        # r"^<c\.korean><c\.bg_transparent>&lrm;(.*)</c\.bg_transparent></c\.korean>$",
+        # r"^<c\.korean><c\.bg_transparent>(.*)</c\.bg_transparent></c\.korean>$",
+        # r"^<c\.korean>(.*)</c\.korean>$",
+        r"^(?:<c\.korean>)?(?:<c\.bg_transparent>)?(?:&lrm;)?(.*?)(?:</c\.bg_transparent>)?(?:</c\.korean>)?$",
     ]
 
 

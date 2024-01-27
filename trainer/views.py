@@ -103,63 +103,64 @@ def from_subtitles(request):
 
 @transaction.atomic()
 def training(request, set_id, repeat):
-    setting = get_setting()
-    current_problem_set = ProblemSet.objects.filter(id=set_id).first()
-    training_queue = None
-    fake_problem_number = int(request.POST["problemNumber"]) + (0 if repeat == 1 else 1)
-    training_queue_id = request.POST.get("trainingQueueId")
-    if training_queue_id is not None:
-        training_queue = TrainingQueue.objects.filter(id=training_queue_id).first()
-        if training_queue is not None:
-            training_queue_item = TrainingQueueItem.objects.filter(
-                queue=training_queue, item_number=training_queue.current_item_number
-            ).first()
-            if training_queue_item is None:
-                training_queue.active = False
-                training_queue.save()
-                context = get_context({"message": "Training complete. Well done!"})  # TODO: display summary
-                return render(request, "trainer/message.html", context)
+    if request.method == "POST":
+        setting = get_setting()
+        current_problem_set = ProblemSet.objects.filter(id=set_id).first()
+        training_queue = None
+        fake_problem_number = int(request.POST["problemNumber"]) + (0 if repeat == 1 else 1)
+        training_queue_id = request.POST.get("trainingQueueId")
+        if training_queue_id is not None:
+            training_queue = TrainingQueue.objects.filter(id=training_queue_id).first()
+            if training_queue is not None:
+                training_queue_item = TrainingQueueItem.objects.filter(
+                    queue=training_queue, item_number=training_queue.current_item_number
+                ).first()
+                if training_queue_item is None:
+                    training_queue.active = False
+                    training_queue.save()
+                    context = get_context({"message": "Training complete. Well done!"})  # TODO: display summary
+                    return render(request, "trainer/message.html", context)
+                else:
+                    problem = training_queue_item.problem
+                    fake_problem_number = training_queue.current_item_number
             else:
-                problem = training_queue_item.problem
-                fake_problem_number = training_queue.current_item_number
+                context = get_context({"message": "No training queue found."})
+                return render(request, "trainer/message.html", context)
         else:
-            context = get_context({"message": "No training queue found."})
-            return render(request, "trainer/message.html", context)
-    else:
-        real_problem_number = get_real_problem_no(set_id, fake_problem_number)
-        if fake_problem_number > real_problem_number:
-            fake_problem_number = 0
-        problem = Problem.objects.filter(problem_set_id=set_id, problem_number=real_problem_number).first()
-        current_problem_set.last_fake_problem_number = fake_problem_number
-        current_problem_set.save()
-    hidden_positions = None
-    if setting.number_of_hidden_words >= 0:
-        number_of_hidden_words = min(setting.number_of_hidden_words, len(problem.sentence.split()))
-        words_in_sentence = list(range(len(problem.sentence.split())))
-        if setting.number_of_hidden_words == 0:
-            number_of_hidden_words = len(words_in_sentence)
-        random.shuffle(words_in_sentence)
-        hidden_positions = words_in_sentence[:number_of_hidden_words]
-    s_problem = SolvableProblem(problem, hidden_positions, setting.length_hint)
-    audio_url = problem.audio_file
-    stat_record = StatRecord(
-        score=str(round(problem.score, 3)),
-        last_played_date=standard_date(problem.last_played) if problem.last_played is not None else "never",
-        played=problem.played,
-        success=problem.success_number,
-        record_stats="Recording stats" if setting.record_stats else "",
-    )
-    context = get_context(
-        {
-            "set": current_problem_set,
-            "problem": None if problem is None else s_problem,
-            "problem_number": fake_problem_number,
-            "audio_url": audio_url,
-            "training_queue": training_queue,
-            "stats": stat_record,
-        }
-    )
-    return render(request, "trainer/problemTraining.html", context)
+            real_problem_number = get_real_problem_no(set_id, fake_problem_number)
+            if fake_problem_number > real_problem_number:
+                fake_problem_number = 0
+            problem = Problem.objects.filter(problem_set_id=set_id, problem_number=real_problem_number).first()
+            current_problem_set.last_fake_problem_number = fake_problem_number
+            current_problem_set.save()
+        hidden_positions = None
+        if setting.number_of_hidden_words >= 0:
+            number_of_hidden_words = min(setting.number_of_hidden_words, len(problem.sentence.split()))
+            words_in_sentence = list(range(len(problem.sentence.split())))
+            if setting.number_of_hidden_words == 0:
+                number_of_hidden_words = len(words_in_sentence)
+            random.shuffle(words_in_sentence)
+            hidden_positions = words_in_sentence[:number_of_hidden_words]
+        s_problem = SolvableProblem(problem, hidden_positions, setting.length_hint)
+        audio_url = problem.audio_file
+        stat_record = StatRecord(
+            score=str(round(problem.score, 3)),
+            last_played_date=standard_date(problem.last_played) if problem.last_played is not None else "never",
+            played=problem.played,
+            success=problem.success_number,
+            record_stats="Recording stats" if setting.record_stats else "",
+        )
+        context = get_context(
+            {
+                "set": current_problem_set,
+                "problem": None if problem is None else s_problem,
+                "problem_number": fake_problem_number,
+                "audio_url": audio_url,
+                "training_queue": training_queue,
+                "stats": stat_record,
+            }
+        )
+        return render(request, "trainer/problemTraining.html", context)
 
 
 @transaction.atomic()
@@ -245,7 +246,8 @@ def evaluate(request, set_id, problem_number):  # TODO: Refactor this shit
                 "set": problem_set,
                 "is_solution": is_solution,
                 "problem": orig_problem,
-                "orig_sentence_words": orig_words,
+                "orig_sentence": orig_problem.sentence,
+                "orig_sentence_words": [(i, w) for i, w in enumerate(orig_words)],
                 "sub_answer": sub_answer_words,
                 "solution": solution,
                 "problem_number": problem_number,

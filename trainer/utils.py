@@ -29,7 +29,8 @@ def get_real_problem_no(set_id: int, fake_problem_number: int) -> int:
 
 
 def get_fake_problem_no(set_id: int, real_problem_number: int) -> int:
-    all_problem_until_this = Problem.objects.filter(problem_set_id=set_id, problem_number__lt=real_problem_number).all()
+    all_problem_until_this = Problem.objects.filter(problem_set_id=set_id, problem_number__lt=real_problem_number,
+                                                    active=True).all()
     return len(all_problem_until_this)
 
 
@@ -61,8 +62,8 @@ def guess_trans_line(start_time: float, end_time: float, trans_lines: List[str],
         if i % 3 == 1:
             trans_start_time, trans_end_time = timetext_to_time(line)
             if (
-                start_time - time_delta <= trans_start_time <= start_time + time_delta
-                or end_time - time_delta <= trans_end_time <= end_time + time_delta
+                    start_time - time_delta <= trans_start_time <= start_time + time_delta
+                    or end_time - time_delta <= trans_end_time <= end_time + time_delta
             ):
                 return trans_lines[i + 1]
     return None

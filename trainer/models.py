@@ -1,8 +1,17 @@
 from django.db import models
 
 
+class SetFolder(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    create_date = models.DateTimeField('date created')
+
+    def __str__(self):
+        return self.name
+
+
 class ProblemSet(models.Model):
     name = models.CharField(max_length=200, unique=True)
+    set_folder = models.ForeignKey(SetFolder, on_delete=models.CASCADE, null=True)
     create_date = models.DateTimeField('date created')
     last_fake_problem_number = models.IntegerField(default=0)
 

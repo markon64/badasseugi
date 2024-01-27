@@ -13,10 +13,10 @@
         </h2>
         <h2>Solution:
             {% for word in orig_sentence_words %}
-                <a href="https://en.dict.naver.com/#/search?query={{ word }}" target="_blank"
-                   class="normal-link">{{ word }}</a>
+                <a id="solution_{{ word.0 }}" class="normal-link">{{ word.1 }}</a>
             {% endfor %}
         </h2>
+        <h2>Original sentence: {{ orig_sentence }}</h2>
         Mistakes: {{ mistake_num }}
         <ol>
             {% for wrong_word in solution %}
@@ -124,6 +124,28 @@
         let playback_speed = document.getElementById("playback_speed");
         let playbackspeed = 1.0;
 
+        {% if orig_sentence_words %}
+            {% for word in orig_sentence_words %}
+                a_word = document.getElementById("solution_{{ word.0 }}")
+                a_word.addEventListener('click', showDict)
+            {% endfor %}
+            function showDict(e) {
+                if (typeof e === 'object') {
+                    word = e.currentTarget.innerText
+                    switch (e.button) {
+                        case 0:
+                            console.log("left")
+                            window.open("https://ko.dict.naver.com/#/search?query=" + word, "_black")
+                            break;
+                        case 2:
+                            console.log("right")
+                            window.open("https://en.dict.naver.com/#/search?query=" + word, "_black")
+                            break;
+                    }
+                }
+            }
+        {% endif %}
+
         {% if problem.id %}
             function bookmark() {
                 let name = document.getElementById('bookmarkName').value;
@@ -230,5 +252,6 @@
                 jumpToField.select();
             }
         }
+
     </script>
 {% endblock %}
